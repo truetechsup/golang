@@ -5,6 +5,7 @@
     "configurationId": "019abba5-0820-7082-9207-bc8a80071bbe",
     "testRunName":"All tests",
     "adapterMode": "2",
+    "certValidation":false,
     "automaticCreationTestCases": true,
     "automaticUpdationLinksToTestCases": true
 }

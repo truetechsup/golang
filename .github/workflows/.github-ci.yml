@@ -147,7 +147,7 @@ jobs:
     
     - name: Install Test IT adapter
       run: |
-        go get github.com/testit-tms/adapters-go@v0.6.3
+        go get github.com/testit-tms/adapters-go@v0.6.1-tms-5.5
     
     - name: Run Go tests
       run: |
