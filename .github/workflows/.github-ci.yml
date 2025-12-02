@@ -126,6 +126,7 @@
 #         cd examples
 #         go test -v -run "$FILTER" ./...
 
+
 name: Go Tests
 
 on:
@@ -139,16 +140,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-    
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.23'
-    
-    - name: Install Test IT adapter
-      run: |
-        go get github.com/testit-tms/adapters-go@v0.6.1-tms-5.5
-    
+  
     - name: Run Go tests
       run: |
         cd examples
