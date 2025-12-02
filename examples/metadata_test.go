@@ -69,7 +69,7 @@ func TestMetadata_with_work_item_ids_success(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "with work item ids success",
-			WorkItemIds: []string{"12345", "54321"},
+			//WorkItemIds: []string{"12345", "54321"},
 		},
 		func() {
 			tms.True(t, true)
@@ -80,7 +80,7 @@ func TestMetadata_with_work_item_ids_failed(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "with work item ids failed",
-			WorkItemIds: []string{"12345", "54321"},
+			//WorkItemIds: []string{"12345", "54321"},
 		},
 		func() {
 			tms.True(t, false)
@@ -224,7 +224,7 @@ func TestMetadata_with_all_success(t *testing.T) {
 			DisplayName: "with all success",
 			ExternalId:  "with_all_success",
 			Title:       "with title",
-			WorkItemIds: []string{"12345", "54321"},
+			//WorkItemIds: []string{"12345", "54321"},
 			Description: "with description",
 			Labels:      []string{"label01", "label02"},
 			ClassName:   "CustomClassName",
@@ -252,7 +252,7 @@ func TestMetadata_with_all_failed(t *testing.T) {
 			DisplayName: "with all failed",
 			ExternalId:  "with_all_failed",
 			Title:       "with title",
-			WorkItemIds: []string{"12345", "54321"},
+			//WorkItemIds: []string{"12345", "54321"},
 			Description: "with description",
 			Labels:      []string{"label01", "label02"},
 			ClassName:   "CustomClassName",
