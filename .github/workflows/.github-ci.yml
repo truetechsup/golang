@@ -131,7 +131,8 @@ name: Go Tests
 on:
   repository_dispatch:
     types: [run-tests]
-
+  push:
+    branches: [master]
 jobs:
   test:
     runs-on: ubuntu-latest
