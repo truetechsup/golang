@@ -5,11 +5,69 @@ on:
     types: [run-tests]
 
 jobs:
-  test:
+  setup-filter:
     runs-on: ubuntu-latest
+    outputs:
+      test_run_id: ${{ steps.set-vars.outputs.TEST_RUN_ID }}
+      project_id: ${{ steps.set-vars.outputs.PROJECT_ID }}
+      configuration_ids: ${{ steps.set-vars.outputs.CONFIGURATION_IDS }}
     
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install testit-cli
+      run: |
+        python -m pip install --upgrade pip
+        pip install testit-cli==2.7.3
+    
+    - name: Get data from webhook
+      id: set-vars
+      run: |
+        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_OUTPUT
+        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_OUTPUT
+        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_OUTPUT
+        
+    
+    - name: Setup TestIT filter
+      run: |
+        export TMS_TOKEN=${{ secrets.TMS_PRIVATE_TOKEN }}
+        mkdir -p tmp
+        
+        testit autotests_filter \
+          --url "${{ secrets.TMS_URL }}" \
+          --configuration-id "${{ github.event.client_payload.configuration_id[0] }}" \
+          --testrun-id "${{ github.event.client_payload.test_run_id }}" \
+          --framework golang \
+          --disable-cert-validation \
+          --output tmp/filter.txt
+        
+        echo "Filter file created:"
+        cat tmp/filter.txt
+    
+    - name: Upload filter artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-filter
+        path: tmp/filter.txt
+        retention-days: 1
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: setup-filter
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download filter artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: test-filter
+        path: tmp/
     
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -20,24 +78,35 @@ jobs:
       run: |
         go get github.com/testit-tms/adapters-go@v0.6.3
     
-    - name: Get data from webhook
-      run: |
-        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_ENV
-        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_ENV
-        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_ENV
-    
-    - name: Setup TestIT filter
-      run: |
-        export TMS_TOKEN=${{ secrets.TMS_PRIVATE_TOKEN }}
-        testit autotests_filter \
-          --url ${{ secrets.TMS_URL }} \
-          --configuration-id $CONFIGURATION_IDS \
-          --testrun-id $TEST_RUN_ID \
-          --framework golang \
-          --output tmp/filter.txt
-    
     - name: Run Go tests
+      env:
+        TMS_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
+        TMS_TEST_RUN_ID: ${{ needs.setup-filter.outputs.test_run_id }}
+        TMS_PROJECT_ID: ${{ needs.setup-filter.outputs.project_id }}
+        TMS_CONFIGURATION_ID: ${{ needs.setup-filter.outputs.configuration_ids }}
       run: |
-        export TMS_TEST_RUN_ID=$TEST_RUN_ID
+        echo "Test parameters:"
+        echo "Test Run ID: $TMS_TEST_RUN_ID"
+        echo "Project ID: $TMS_PROJECT_ID"
+        echo "Configuration ID: $TMS_CONFIGURATION_ID"
+        
+        # Читаем фильтр из файла
+        FILTER_FILE="tmp/filter.txt"
+        if [ ! -f "$FILTER_FILE" ]; then
+          echo "ERROR: Filter file not found at $FILTER_FILE"
+          exit 1
+        fi
+        
+        FILTER=$(cat "$FILTER_FILE")
+        echo "Filter: $FILTER"
+        
+        # Проверяем, есть ли тесты для запуска
+        if [ -z "$FILTER" ] || [ "$FILTER" = "" ]; then
+          echo "No tests to run according to filter"
+          exit 0
+        fi
+        
+        # Переходим в директорию с тестами и запускаем
+        echo "Running tests in examples directory..."
         cd examples
-        go test -run "$(cat tmp/filter.txt)"
+        go test -v -run "$FILTER" ./...
