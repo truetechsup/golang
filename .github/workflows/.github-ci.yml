@@ -1,0 +1,29 @@
+name: Go Tests
+
+on:
+  repository_dispatch:
+    types: [run-tests]
+  push:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+    
+    - name: Install Test IT adapter
+      run: |
+        go get github.com/testit-tms/adapters-go@v0.6.3
+    
+    - name: Run Go tests
+      run: |
+        export TMS_CONFIG_FILE=examples/tms.config.json
+        cd ci_tests
+        go test -v ./...
