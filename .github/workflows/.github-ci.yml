@@ -25,5 +25,5 @@ jobs:
     - name: Run Go tests
       run: |
         export TMS_CONFIG_FILE=examples/tms.config.json
-        cd ci_tests
+        cd examples
         go test -v ./...
