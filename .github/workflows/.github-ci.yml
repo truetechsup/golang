@@ -32,11 +32,20 @@ jobs:
         echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_OUTPUT
         echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_OUTPUT
         
+        echo "Variables set:"
+        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}"
+        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}"
+        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}"
     
     - name: Setup TestIT filter
       run: |
         export TMS_TOKEN=${{ secrets.TMS_PRIVATE_TOKEN }}
         mkdir -p tmp
+        
+        echo "Generating test filter with parameters:"
+        echo "URL: ${{ secrets.TMS_URL }}"
+        echo "Configuration ID: ${{ github.event.client_payload.configuration_id[0] }}"
+        echo "Test Run ID: ${{ github.event.client_payload.test_run_id }}"
         
         testit autotests_filter \
           --url "${{ secrets.TMS_URL }}" \
@@ -48,9 +57,15 @@ jobs:
         
         echo "Filter file created:"
         cat tmp/filter.txt
+        
+        # Проверяем, что файл не пустой
+        if [ ! -s tmp/filter.txt ]; then
+          echo "WARNING: Filter file is empty!"
+          echo "empty" > tmp/filter.txt
+        fi
     
     - name: Upload filter artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: test-filter
         path: tmp/filter.txt
@@ -64,7 +79,7 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: Download filter artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: test-filter
         path: tmp/
@@ -98,10 +113,10 @@ jobs:
         fi
         
         FILTER=$(cat "$FILTER_FILE")
-        echo "Filter: $FILTER"
+        echo "Filter content: $FILTER"
         
         # Проверяем, есть ли тесты для запуска
-        if [ -z "$FILTER" ] || [ "$FILTER" = "" ]; then
+        if [ -z "$FILTER" ] || [ "$FILTER" = "" ] || [ "$FILTER" = "empty" ]; then
           echo "No tests to run according to filter"
           exit 0
         fi
