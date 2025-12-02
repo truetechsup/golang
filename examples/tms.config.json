@@ -4,6 +4,6 @@
     "projectId": "019ade45-15a1-7847-8a79-c2b08b466ed7",
     "configurationId": "019ade45-15de-79e2-ae8d-6af6365e583e",
     "testRunName":"All tests",
-    "adapterMode": "2",
+    "adapterMode": "1",
     "automaticCreationTestCases": true
 }

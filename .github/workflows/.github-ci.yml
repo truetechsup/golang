@@ -3,8 +3,6 @@ name: Go Tests
 on:
   repository_dispatch:
     types: [run-tests]
-  push:
-    branches: [master]
 
 jobs:
   test:
@@ -22,7 +20,24 @@ jobs:
       run: |
         go get github.com/testit-tms/adapters-go@v0.6.3
     
+    - name: Get data from webhook
+      run: |
+        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_ENV
+        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_ENV
+        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_ENV
+    
+    - name: Setup TestIT filter
+      run: |
+        export TMS_TOKEN=${{ secrets.TMS_PRIVATE_TOKEN }}
+        testit autotests_filter \
+          --url ${{ secrets.TMS_URL }} \
+          --configuration-id $CONFIGURATION_IDS \
+          --testrun-id $TEST_RUN_ID \
+          --framework golang \
+          --output tmp/filter.txt
+    
     - name: Run Go tests
       run: |
+        export TMS_TEST_RUN_ID=$TEST_RUN_ID
         cd examples
-        go test -v ./...
+        go test -run "$(cat tmp/filter.txt)"
