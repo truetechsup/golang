@@ -1,10 +1,10 @@
 {
-    "url": "https://team-0tm5.testit.software",
-    "privateToken": "WXZYRzVFUWp0RkdpOFlWYjJR",
-    "projectId": "019ade45-15a1-7847-8a79-c2b08b466ed7",
-    "configurationId": "019ade45-15de-79e2-ae8d-6af6365e583e",
+    "url": "https://playground.testit.ru",
+    "privateToken": "WnVNZzlDdWNRaVlMc3JrWEYz",
+    "projectId": "019abba5-0813-7a43-afdf-495d0ce77702",
+    "configurationId": "019abba5-0820-7082-9207-bc8a80071bbe",
     "testRunName":"All tests",
-    "adapterMode": "1",
+    "adapterMode": "2",
     "automaticCreationTestCases": true,
     "automaticUpdationLinksToTestCases": true
 }
