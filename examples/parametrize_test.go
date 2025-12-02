@@ -13,6 +13,7 @@ func TestParameters_success(t *testing.T) {
 		stepName       string
 		stepParameters map[string]interface{}
 		expValue       bool
+		workItemIds    []string
 	}{
 		{
 			name: "add parameters success",
@@ -25,7 +26,8 @@ func TestParameters_success(t *testing.T) {
 				"param1": "value1",
 				"param2": 15,
 			},
-			expValue: true,
+			expValue:    true,
+			workItemIds: []string{"714"},
 		},
 		{
 			name: "add parameters failed",
@@ -38,7 +40,8 @@ func TestParameters_success(t *testing.T) {
 				"param1": "value1",
 				"param2": 15,
 			},
-			expValue: false,
+			expValue:    false,
+			workItemIds: []string{"716"},
 		},
 	}
 	for _, tt := range tests {

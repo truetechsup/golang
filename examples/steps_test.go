@@ -10,6 +10,7 @@ func TestSteps_Success(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "steps success",
+			WorkItemIds: []string{"718"},
 		},
 		func() {
 			tms.Step(
@@ -55,6 +56,7 @@ func TestSteps_Failed(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "steps failed",
+			WorkItemIds: []string{"720"},
 		},
 		func() {
 			tms.Step(

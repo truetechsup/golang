@@ -12,6 +12,7 @@ func TestMethods_message_success(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "add message success",
+			WorkItemIds: []string{"702"},
 		},
 		func() {
 			tms.AddMessage("test message")
@@ -23,6 +24,7 @@ func TestMethods_message_failed(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "add message failed",
+			WorkItemIds: []string{"704"},
 		},
 		func() {
 			tms.AddMessage("test message")
@@ -34,6 +36,7 @@ func TestMethods_link_success(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "add links success",
+			WorkItemIds: []string{"706"},
 		},
 		func() {
 			tms.AddLinks(tms.Link{
@@ -66,6 +69,7 @@ func TestMethods_link_failed(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "add links failed",
+			WorkItemIds: []string{"708"},
 		},
 		func() {
 			tms.AddLinks(tms.Link{
@@ -98,6 +102,7 @@ func TestMethods_attachments_success(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "add attachments success",
+			WorkItemIds: []string{"710"},
 		},
 		func() {
 			path, err := os.Getwd()
@@ -130,6 +135,7 @@ func TestMethods_attachments_failed(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "add attachments failed",
+			WorkItemIds: []string{"712"},
 		},
 		func() {
 			path, err := os.Getwd()

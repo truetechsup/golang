@@ -25,6 +25,7 @@ func TestFixture_success(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "fixture success",
+			WorkItemIds: []string{"658"},
 		},
 		func() {
 			tms.Step(
@@ -72,6 +73,7 @@ func TestFixture_failed(t *testing.T) {
 	tms.Test(t,
 		tms.TestMetadata{
 			DisplayName: "fixture failed",
+			WorkItemIds: []string{"660"},
 		},
 		func() {
 			tms.Step(
