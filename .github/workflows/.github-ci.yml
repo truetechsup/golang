@@ -144,11 +144,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: '1.23'
-    
-    - name: Install Test IT adapter
-      run: |
-        go get github.com/testit-tms/adapters-go@v0.6.1-tms-5.5
+        go-version: '1.24.1'
     
     - name: Run Go tests
       run: |
