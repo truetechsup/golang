@@ -5,12 +5,29 @@ on:
     types: [run-tests]
 
 jobs:
-  setup-filter:
+  get-data-from-webhook:
     runs-on: ubuntu-latest
     outputs:
+      adapter_mode: ${{ steps.set-vars.outputs.ADAPTER_MODE }}
+      tms_url: ${{ steps.set-vars.outputs.TMS_URL }}
       test_run_id: ${{ steps.set-vars.outputs.TEST_RUN_ID }}
       project_id: ${{ steps.set-vars.outputs.PROJECT_ID }}
       configuration_ids: ${{ steps.set-vars.outputs.CONFIGURATION_IDS }}
+    
+    steps:
+    - name: Get data from webhook
+      id: set-vars
+      run: |
+        echo "ADAPTER_MODE=${{ github.event.client_payload.adapter_mode }}" >> $GITHUB_OUTPUT
+        echo "TMS_URL=${{ github.event.client_payload.url }}" >> $GITHUB_OUTPUT
+        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_OUTPUT
+        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_OUTPUT
+        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_OUTPUT
+
+  setup-filter:
+    runs-on: ubuntu-latest
+    needs: get-data-from-webhook
+    if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
     
     steps:
     - uses: actions/checkout@v3
@@ -18,49 +35,27 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.13'
     
     - name: Install testit-cli
       run: |
         python -m pip install --upgrade pip
-        pip install testit-cli==2.7.3
-    
-    - name: Get data from webhook
-      id: set-vars
-      run: |
-        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_OUTPUT
-        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_OUTPUT
-        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_OUTPUT
-        
-        echo "Variables set:"
-        echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}"
-        echo "PROJECT_ID=${{ github.event.client_payload.project_id }}"
-        echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}"
+        pip install testit-cli==2.8.1
     
     - name: Setup TestIT filter
       run: |
         export TMS_TOKEN=${{ secrets.TMS_PRIVATE_TOKEN }}
         mkdir -p tmp
         
-        echo "Generating test filter with parameters:"
-        echo "URL: ${{ secrets.TMS_URL }}"
-        echo "Configuration ID: ${{ github.event.client_payload.configuration_id[0] }}"
-        echo "Test Run ID: ${{ github.event.client_payload.test_run_id }}"
-        
         testit autotests_filter \
-          --url "${{ secrets.TMS_URL }}" \
-          --configuration-id "${{ github.event.client_payload.configuration_id[0] }}" \
-          --testrun-id "${{ github.event.client_payload.test_run_id }}" \
+          --url "${{ needs.get-data-from-webhook.outputs.tms_url }}" \
+          --configuration-id "${{ needs.get-data-from-webhook.outputs.configuration_ids }}" \
+          --testrun-id "${{ needs.get-data-from-webhook.outputs.test_run_id }}" \
           --framework golang \
           --disable-cert-validation \
           --output tmp/filter.txt
         
-        echo "Filter file created:"
-        cat tmp/filter.txt
-        
-        # Проверяем, что файл не пустой
         if [ ! -s tmp/filter.txt ]; then
-          echo "WARNING: Filter file is empty!"
           echo "empty" > tmp/filter.txt
         fi
     
@@ -73,12 +68,14 @@ jobs:
 
   run-tests:
     runs-on: ubuntu-latest
-    needs: setup-filter
+    needs: [get-data-from-webhook, setup-filter]
+    if: always() && (needs.setup-filter.result == 'success' || needs.setup-filter.result == 'skipped')
     
     steps:
     - uses: actions/checkout@v3
     
     - name: Download filter artifact
+      if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
       uses: actions/download-artifact@v4
       with:
         name: test-filter
@@ -91,38 +88,35 @@ jobs:
     
     - name: Install Test IT adapter
       run: |
-        go get github.com/testit-tms/adapters-go@v0.6.3
+        go get github.com/testit-tms/adapters-go@v0.8.0
     
-    - name: Run Go tests
+    - name: Run Go tests (adapterMode=1)
+      if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
       env:
         TMS_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
-        TMS_TEST_RUN_ID: ${{ needs.setup-filter.outputs.test_run_id }}
-        TMS_PROJECT_ID: ${{ needs.setup-filter.outputs.project_id }}
-        TMS_CONFIGURATION_ID: ${{ needs.setup-filter.outputs.configuration_ids }}
+        TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
+        TMS_TEST_RUN_ID: ${{ needs.get-data-from-webhook.outputs.test_run_id }}
+        TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
+        TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
+        TMS_ADAPTER_MODE: ${{ needs.get-data-from-webhook.outputs.adapter_mode }}
       run: |
-        echo "Test parameters:"
-        echo "Test Run ID: $TMS_TEST_RUN_ID"
-        echo "Project ID: $TMS_PROJECT_ID"
-        echo "Configuration ID: $TMS_CONFIGURATION_ID"
-        
-        # Читаем фильтр из файла
-        FILTER_FILE="tmp/filter.txt"
-        if [ ! -f "$FILTER_FILE" ]; then
-          echo "ERROR: Filter file not found at $FILTER_FILE"
-          exit 1
-        fi
-        
-        FILTER=$(cat "$FILTER_FILE")
-        echo "Filter content: $FILTER"
-        
-        # Проверяем, есть ли тесты для запуска
-        if [ -z "$FILTER" ] || [ "$FILTER" = "" ] || [ "$FILTER" = "empty" ]; then
-          echo "No tests to run according to filter"
+        FILTER=$(cat tmp/filter.txt)
+        if [ -z "$FILTER" ] || [ "$FILTER" = "empty" ]; then
+          echo "No tests to run"
           exit 0
         fi
-        
-        # Переходим в директорию с тестами и запускаем
-        echo "Running tests in examples directory..."
         cd examples
         go test -v -run "$FILTER" ./...
+    
+    - name: Run Go tests (adapterMode=2)
+      if: needs.get-data-from-webhook.outputs.adapter_mode == '2'
+      env:
+        TMS_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
+        TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
+        TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
+        TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
+        TMS_ADAPTER_MODE: ${{ needs.get-data-from-webhook.outputs.adapter_mode }}
+      run: |
+        cd examples
+        go test -v ./...
 
