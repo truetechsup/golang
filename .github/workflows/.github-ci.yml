@@ -39,7 +39,7 @@ jobs:
     - name: Install testit-cli
       run: |
         python -m pip install --upgrade pip
-        pip install -r cli-version.txt
+        pip install testit-cli==2.8.1
     
     - name: Setup TestIT filter
       run: |
@@ -87,7 +87,7 @@ jobs:
     
     - name: Install Test IT adapter
       run: |
-        go get $(cat adapter-version.txt | tr -d '[:space:]')
+        go get github.com/testit-tms/adapters-go@v0.8.0
     
     - name: Run Go tests (adapterMode=1)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '1'

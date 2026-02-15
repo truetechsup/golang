@@ -1,2 +1,0 @@
-github.com/testit-tms/adapters-go@v0.8.0
-
