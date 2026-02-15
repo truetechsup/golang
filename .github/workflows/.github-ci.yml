@@ -92,7 +92,7 @@ jobs:
     - name: Run Go tests (adapterMode=1)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
       env:
-        TMS_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
+        TMS_PRIVATE_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
         TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
         TMS_TEST_RUN_ID: ${{ needs.get-data-from-webhook.outputs.test_run_id }}
         TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
@@ -110,7 +110,7 @@ jobs:
     - name: Run Go tests (adapterMode=2)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '2'
       env:
-        TMS_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
+        TMS_PRIVATE_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
         TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
         TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
         TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
