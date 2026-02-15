@@ -23,7 +23,6 @@ jobs:
         echo "TEST_RUN_ID=${{ github.event.client_payload.test_run_id }}" >> $GITHUB_OUTPUT
         echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_OUTPUT
         echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_OUTPUT
-
   setup-filter:
     runs-on: ubuntu-latest
     needs: get-data-from-webhook
@@ -39,9 +38,8 @@ jobs:
     
     - name: Install testit-cli
       run: |
-        pip install --upgrade pip
-        V=$(curl -s https://pypi.org/pypi/testit-cli/json | python3 -c "import sys,json;v=[x for x in json.load(sys.stdin)['releases']if x.replace('.','').isdigit()];print(max(v,key=lambda x:[int(i)for i in x.split('.')]))")
-        pip install testit-cli==$V
+        python -m pip install --upgrade pip
+        pip install testit-cli==2.8.1
     
     - name: Setup TestIT filter
       run: |
@@ -89,8 +87,7 @@ jobs:
     
     - name: Install Test IT adapter
       run: |
-        V=$(git ls-remote --tags https://github.com/testit-tms/adapters-go.git|sed 's/.*\///'|grep '^v[0-9]\+\.[0-9]\+\.[0-9]\+$'|sort -V|tail -1)
-        go get github.com/testit-tms/adapters-go@$V
+        go get github.com/testit-tms/adapters-go@v0.8.0
     
     - name: Run Go tests (adapterMode=1)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
@@ -121,4 +118,3 @@ jobs:
       run: |
         cd examples
         go test -v ./...
-
