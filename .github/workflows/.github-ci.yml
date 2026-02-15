@@ -99,13 +99,12 @@ jobs:
         TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
         TMS_ADAPTER_MODE: ${{ needs.get-data-from-webhook.outputs.adapter_mode }}
       run: |
-        FILTER=$(cat tmp/filter.txt)
-        if [ -z "$FILTER" ] || [ "$FILTER" = "empty" ]; then
+        if [ -z "$(cat tmp/filter.txt)" ] || [ "$(cat tmp/filter.txt)" = "empty" ]; then
           echo "No tests to run"
           exit 0
         fi
         cd examples
-        go test -v -run "$FILTER" ./...
+        go test -v -run "$(cat tmp/filter.txt)" ./...
     
     - name: Run Go tests (adapterMode=2)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '2'
