@@ -30,8 +30,7 @@ jobs:
         echo "PROJECT_ID=${{ github.event.client_payload.project_id }}" >> $GITHUB_ENV
         echo "CONFIGURATION_IDS=${{ github.event.client_payload.configuration_id[0] }}" >> $GITHUB_ENV
 
-    - name: Download sync-storage (adapterMode=0)
-      if: env.ADAPTER_MODE == '0'
+    - name: Download sync-storage
       run: |
         mkdir -p .caches
         # Получаем JSON последнего релиза
@@ -53,17 +52,25 @@ jobs:
         # Проверка, что скачан реальный исполняемый файл
         file .caches/syncstorage-linux-amd64 | grep -q "ELF.*executable" || { echo "Downloaded file is not an executable"; cat .caches/syncstorage-linux-amd64 | head -c 200; exit 1; }
 
-    - name: Start sync-storage (adapterMode=0)
-      if: env.ADAPTER_MODE == '0'
+    - name: Start sync-storage
+      env:
+        # Ждать до 600 с, пока не применятся все результаты, включая удерживаемый «в процессе»
+        TMS_SYNC_STORAGE_AUTOCOMPLETE_FALLBACK_S: 600
       run: |
+        # adapterMode=0 — прогон из вебхука; adapterMode=2 — прогон создаёт адаптер и сам регистрирует его в sync-storage
+        TEST_RUN_ARGS=()
+        if [ "${{ env.ADAPTER_MODE }}" == "0" ]; then
+          TEST_RUN_ARGS+=(--testRunId "${{ env.TEST_RUN_ID }}")
+        fi
         nohup .caches/syncstorage-linux-amd64 \
-          --testRunId ${{ env.TEST_RUN_ID }} \
+          "${TEST_RUN_ARGS[@]}" \
           --port 49152 \
           --baseURL ${{ env.TMS_URL }} \
           --privateToken ${{ secrets.TMS_PRIVATE_TOKEN }} \
           > service.log 2>&1 &
         echo $! > syncstorage.pid
         sleep 3
+        curl -sf http://127.0.0.1:49152/health || { echo "sync-storage did not start"; cat service.log; exit 1; }
 
     - name: Run tests
       env:
@@ -79,26 +86,33 @@ jobs:
       run: |
         # adapterMode=0 — результаты пишутся в существующий прогон из вебхука
         # adapterMode=2 — адаптер сам создаёт новый прогон, testRunId не передаём
+        export TMS_SYNC_STORAGE_PORT=49152
         if [ "$TMS_ADAPTER_MODE" == "0" ]; then
           export TMS_TEST_RUN_ID="${{ env.TEST_RUN_ID }}"
-          export TMS_SYNC_STORAGE_PORT=49152
         fi
         cd examples
         # Адаптер требует tms.config.json в текущей папке; все значения берутся из переменных TMS_*
         echo '{}' > tms.config.json
         go test -v ./...
 
-    - name: Wait for sync-storage completion (adapterMode=0)
-      if: always() && env.ADAPTER_MODE == '0'
+    - name: Wait for sync-storage completion
+      if: always()
       run: |
-        curl -v "http://127.0.0.1:49152/wait-completion?testRunId=${{ env.TEST_RUN_ID }}" || true
+        # Дожидаемся применения всех результатов и только после этого останавливаем sync-storage
+        if [ "${{ env.ADAPTER_MODE }}" == "0" ]; then
+          curl -v --max-time 660 "http://127.0.0.1:49152/wait-completion?testRunId=${{ env.TEST_RUN_ID }}" || true
+        else
+          curl -v --max-time 660 "http://127.0.0.1:49152/wait-completion" || true
+        fi
         if [ -f syncstorage.pid ]; then
           kill $(cat syncstorage.pid) || true
         fi
 
-    - name: Upload sync-storage logs (on failure)
-      if: failure() && env.ADAPTER_MODE == '0'
+    - name: Upload sync-storage log
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: syncstorage-logs
+        name: syncstorage-log
         path: service.log
+        retention-days: 1
+        if-no-files-found: ignore
