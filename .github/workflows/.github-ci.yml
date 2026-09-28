@@ -53,10 +53,9 @@ jobs:
         file .caches/syncstorage-linux-amd64 | grep -q "ELF.*executable" || { echo "Downloaded file is not an executable"; cat .caches/syncstorage-linux-amd64 | head -c 200; exit 1; }
 
     - name: Start sync-storage
-      env:
-        # Ждать до 600 с, пока не применятся все результаты, включая удерживаемый «в процессе»
-        TMS_SYNC_STORAGE_AUTOCOMPLETE_FALLBACK_S: 600
       run: |
+        # Ждать до 600 с, пока не применятся все результаты, включая удерживаемый «в процессе»
+        export TMS_SYNC_STORAGE_AUTOCOMPLETE_FALLBACK_S=600
         # adapterMode=0 — прогон из вебхука; adapterMode=2 — прогон создаёт адаптер и сам регистрирует его в sync-storage
         TEST_RUN_ARGS=()
         if [ "${{ env.ADAPTER_MODE }}" == "0" ]; then
