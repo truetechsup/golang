@@ -69,9 +69,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: [get-data-from-webhook, setup-filter]
     if: always() && (needs.setup-filter.result == 'success' || needs.setup-filter.result == 'skipped')
+    env:
+      TMS_PRIVATE_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
+      TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
+      TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
+      TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
+      TMS_ADAPTER_MODE: ${{ needs.get-data-from-webhook.outputs.adapter_mode }}
+      TMS_TEST_RUN_NAME: "GitHub Actions #${{ github.run_number }} (adapterMode=${{ needs.get-data-from-webhook.outputs.adapter_mode }})"
+      TMS_TEST_RUN_LINKS: '[{"url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","title":"GitHub Actions pipeline","type":"Related"}]'
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Download filter artifact
       if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
@@ -81,39 +89,30 @@ jobs:
         path: tmp/
     
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.23'
+        go-version-file: go.mod
     
-    - name: Install Test IT adapter
+    - name: Install latest Test IT adapter
       run: |
-        go get github.com/testit-tms/adapters-go@v0.8.0
+        go get github.com/testit-tms/adapters-go/v2@latest
+        go list -m github.com/testit-tms/adapters-go/v2
     
     - name: Run Go tests (adapterMode=1)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '1'
       env:
-        TMS_PRIVATE_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
-        TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
         TMS_TEST_RUN_ID: ${{ needs.get-data-from-webhook.outputs.test_run_id }}
-        TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
-        TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
-        TMS_ADAPTER_MODE: ${{ needs.get-data-from-webhook.outputs.adapter_mode }}
       run: |
-        if [ -z "$(cat tmp/filter.txt)" ] || [ "$(cat tmp/filter.txt)" = "empty" ]; then
+        FILTER="$(cat tmp/filter.txt)"
+        if [ -z "$FILTER" ] || [ "$FILTER" = "empty" ]; then
           echo "No tests to run"
           exit 0
         fi
         cd examples
-        go test -v -run "$(cat tmp/filter.txt)" ./...
+        go test -v -run "$FILTER" ./...
     
     - name: Run Go tests (adapterMode=2)
       if: needs.get-data-from-webhook.outputs.adapter_mode == '2'
-      env:
-        TMS_PRIVATE_TOKEN: ${{ secrets.TMS_PRIVATE_TOKEN }}
-        TMS_URL: ${{ needs.get-data-from-webhook.outputs.tms_url }}
-        TMS_PROJECT_ID: ${{ needs.get-data-from-webhook.outputs.project_id }}
-        TMS_CONFIGURATION_ID: ${{ needs.get-data-from-webhook.outputs.configuration_ids }}
-        TMS_ADAPTER_MODE: ${{ needs.get-data-from-webhook.outputs.adapter_mode }}
       run: |
         cd examples
         go test -v ./...

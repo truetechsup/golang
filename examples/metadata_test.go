@@ -3,7 +3,8 @@ package examples
 import (
 	"testing"
 
-	tms "github.com/testit-tms/adapters-go"
+	tms "github.com/testit-tms/adapters-go/v2"
+	"github.com/testit-tms/adapters-go/v2/models"
 )
 
 func TestMetadata_without_metadata_success(t *testing.T) {
@@ -205,7 +206,7 @@ func TestMetadata_with_links_success(t *testing.T) {
 					Url:         "http://google.com",
 					Title:       "Google",
 					Description: "Google search engine",
-					LinkType:    tms.LINKTYPE_RELATED,
+					LinkType:    models.LINKTYPE_RELATED,
 				},
 			},
 		},
@@ -227,7 +228,7 @@ func TestMetadata_with_links_failed(t *testing.T) {
 					Url:         "http://google.com",
 					Title:       "Google",
 					Description: "Google search engine",
-					LinkType:    tms.LINKTYPE_RELATED,
+					LinkType:    models.LINKTYPE_RELATED,
 				},
 			},
 		},
@@ -255,7 +256,7 @@ func TestMetadata_with_all_success(t *testing.T) {
 					Url:         "http://google.com",
 					Title:       "Google",
 					Description: "Google search engine",
-					LinkType:    tms.LINKTYPE_RELATED,
+					LinkType:    models.LINKTYPE_RELATED,
 				},
 			},
 		},
@@ -283,7 +284,7 @@ func TestMetadata_with_all_failed(t *testing.T) {
 					Url:         "http://google.com",
 					Title:       "Google",
 					Description: "Google search engine",
-					LinkType:    tms.LINKTYPE_RELATED,
+					LinkType:    models.LINKTYPE_RELATED,
 				},
 			},
 		},

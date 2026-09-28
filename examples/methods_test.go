@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	tms "github.com/testit-tms/adapters-go"
+	tms "github.com/testit-tms/adapters-go/v2"
+	"github.com/testit-tms/adapters-go/v2/models"
 )
 
 func TestMethods_message_success(t *testing.T) {
@@ -58,7 +59,7 @@ func TestMethods_link_success(t *testing.T) {
 				Url:         "https://testit.software",
 				Title:       "TestIt",
 				Description: "TestIt is a test management system",
-				LinkType:    tms.LINKTYPE_RELATED,
+				LinkType:    models.LINKTYPE_RELATED,
 			})
 
 			tms.True(t, true)
@@ -91,7 +92,7 @@ func TestMethods_link_failed(t *testing.T) {
 				Url:         "https://testit.software",
 				Title:       "TestIt",
 				Description: "TestIt is a test management system",
-				LinkType:    tms.LINKTYPE_RELATED,
+				LinkType:    models.LINKTYPE_RELATED,
 			})
 
 			tms.True(t, false)

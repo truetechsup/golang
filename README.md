@@ -1,17 +1,56 @@
-# Example for adapters-go
+# Go + Test IT + GitHub Actions
 
-## How to import from scratch
+Пример автотестов на Go, которые запускаются из Test IT через GitHub Actions и отправляют результаты обратно в Test IT с помощью [adapters-go](https://github.com/testit-tms/adapters-go).
 
+**Проект в Test IT:** [team-0tm5.testit.software/projects/525/autotests](https://team-0tm5.testit.software/projects/525/autotests)
+
+## Как это работает
+
+1. Test IT отправляет webhook в GitHub — событие `repository_dispatch` с типом `run-tests`.
+2. Запускается workflow [.github/workflows/.github-ci.yml](.github/workflows/.github-ci.yml).
+3. В workflow устанавливается последняя версия адаптера (`go get github.com/testit-tms/adapters-go/v2@latest`).
+4. Тесты выполняются через `go test`, результаты загружаются в Test IT.
+5. К прогону в Test IT прикрепляется ссылка на пайплайн GitHub Actions (`actions/runs/<run_id>`).
+
+### Режимы запуска
+
+Режим задаётся полем `adapter_mode` в webhook.
+
+| `adapter_mode` | Что происходит | Имя прогона |
+|---|---|---|
+| `1` | Результаты пишутся в существующий прогон, `test_run_id` берётся из webhook. Запускаются только тесты из прогона (фильтр строится через `testit-cli`). | `GitHub Actions #<run_number> (adapterMode=1)` |
+| `2` | Адаптер сам создаёт новый прогон, `test_run_id` не передаётся. Запускаются все тесты. | `GitHub Actions #<run_number> (adapterMode=2)` |
+
+### Данные из webhook
+
+```json
+{
+  "event_type": "run-tests",
+  "client_payload": {
+    "adapter_mode": "1",
+    "url": "https://team-0tm5.testit.software",
+    "project_id": "<id проекта>",
+    "configuration_id": ["<id конфигурации>"],
+    "test_run_id": "<id прогона, только для adapter_mode=1>"
+  }
+}
 ```
-go get github.com/testit-tms/adapters-go@v0.4.0 # v0.4.1
-```
 
-## How to run
+### Секреты репозитория
 
-1. Setup `tms.config.json`
+| Секрет | Назначение |
+|---|---|
+| `TMS_PRIVATE_TOKEN` | Приватный токен пользователя Test IT |
 
-2. Run:
+## Структура проекта
 
-```
-go test ./...
-```
+* **.github/workflows/.github-ci.yml** – workflow запуска тестов по webhook из Test IT
+* **go.mod** – Go-модуль; адаптер добавляется в него в CI
+* **examples/** – тесты
+    * **main_test.go** – `TestMain` с `tms.Run(m)`, обязателен для адаптера v2
+    * **before_after_test.go** – примеры setup/teardown
+    * **metadata_test.go** – примеры [метаданных adapters-go (→ github.com)](https://github.com/testit-tms/adapters-go#usage)
+    * **methods_test.go** – примеры [методов adapters-go (→ github.com)](https://github.com/testit-tms/adapters-go#usage): сообщения, ссылки, вложения
+    * **parametrize_test.go** – примеры параметризованных тестов
+    * **steps_test.go** – примеры шагов
+    * **attachments/** – файлы для тестов с вложениями
