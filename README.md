@@ -18,8 +18,8 @@
 
 | `adapter_mode` | Что происходит | Имя прогона |
 |---|---|---|
-| `1` | Результаты пишутся в существующий прогон, `test_run_id` берётся из webhook. Запускаются только тесты из прогона (фильтр строится через `testit-cli`). | `GitHub Actions #<run_number> (adapterMode=1)` |
-| `2` | Адаптер сам создаёт новый прогон, `test_run_id` не передаётся. Запускаются все тесты. | `GitHub Actions #<run_number> (adapterMode=2)` |
+| `0` | Результаты пишутся в существующий прогон, `test_run_id` берётся из webhook. Sync-storage запускается в workflow. | `GitHub Actions #<run_number> (adapterMode=0)` |
+| `2` | Адаптер сам создаёт новый прогон, `test_run_id` не передаётся. | `GitHub Actions #<run_number> (adapterMode=2)` |
 
 ### Данные из webhook
 
@@ -27,11 +27,11 @@
 {
   "event_type": "run-tests",
   "client_payload": {
-    "adapter_mode": "1",
+    "adapter_mode": "0",
     "url": "https://team-0tm5.testit.software",
     "project_id": "<id проекта>",
     "configuration_id": ["<id конфигурации>"],
-    "test_run_id": "<id прогона, только для adapter_mode=1>"
+    "test_run_id": "<id прогона, только для adapter_mode=0>"
   }
 }
 ```
