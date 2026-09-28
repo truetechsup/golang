@@ -84,6 +84,8 @@ jobs:
           export TMS_SYNC_STORAGE_PORT=49152
         fi
         cd examples
+        # Адаптер требует tms.config.json в текущей папке; все значения берутся из переменных TMS_*
+        echo '{}' > tms.config.json
         go test -v ./...
 
     - name: Wait for sync-storage completion (adapterMode=0)
