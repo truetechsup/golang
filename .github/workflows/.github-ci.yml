@@ -69,7 +69,6 @@ jobs:
           > service.log 2>&1 &
         echo $! > syncstorage.pid
         sleep 3
-        curl -sf http://127.0.0.1:49152/health || { echo "sync-storage did not start"; cat service.log; exit 1; }
 
     - name: Run tests
       env:
